@@ -1,44 +1,65 @@
-<!-- PORTFOLIO PROJECT PROFILE: maintained by the repository owner -->
+# Sky Recommend — Python Recommendation Engine
 
-## Project profile and code-audit snapshot
+**Status: engineering beta.** This repository now contains a small, deterministic recommendation API rather than a placeholder service. CI validates compile, Ruff, pytest, dependency audit, Docker build, and non-root image execution. Production deployment is not verified here.
 
-**What this is:** **Python-Recommendation-Engine** is a public repository described as: “Enterprise-grade recommendation engine implementation in Python. #SkyCoin4444 #AI #Blockchain #DevOps #Innovation” Its dominant language signals are **Python (5 files)**.
+## What it does
 
-**Why it has value:** Its value is best understood through the implementation evidence currently present in the repository: **19 tracked files** were observed in the shallow audit, with the source structure and existing documentation providing the project’s specific context. This README does not treat a prototype, experiment, or archive as a production system without supporting evidence.
+Sky Recommend ranks candidate items against a caller-supplied preference profile using cosine similarity. It is intended as a transparent baseline recommender for feeds, marketplaces, learning content, or similar ranking experiments where deterministic behavior is more valuable than pretending to provide a trained ML platform.
 
-**Implementation evidence:** 2 test-related file(s) detected; 2 dependency or package manifest(s) detected; 2 build/CI/infrastructure signal(s) detected; and 3 documentation or governance file(s) detected. Test filenames observed include `tests/test_engine.py`, `tests/test_main.py`. Dependency or package files include `package.json`, `requirements.txt`. Build, CI, or infrastructure signals include `Dockerfile`, `.github/workflows/ci.yml`.
+Implemented endpoints:
 
-**Current status:** The repository is tracked on the `main` branch. The existing source tree, configuration, tests, workflows, and documentation remain authoritative for supported behavior and maturity. A code audit is not a production-readiness certification, and the presence of a test or workflow file does not establish that all checks pass.
+- `GET /healthz`
+- `GET /readyz`
+- `POST /v1/recommend`
 
-**Relationship to the wider portfolio:** This repository is one focused component of the broader Skyler Blue Spillers portfolio across AI, software engineering, cloud and DevOps, cybersecurity, blockchain, finance, education, social systems, and creative work. It may provide a service boundary, implementation pattern, experiment, archive, or reusable idea for related repositories. Treat repositories as technical dependencies only where documented interfaces and verified project requirements support that relationship.
+Example request:
 
-**Quality and security note:** No obvious secret-like pattern was detected by the limited static scan; this is not a substitute for a security audit. No TODO/FIXME marker was detected in the scanned text files.
+```json
+{
+  "profile": {"chess": 1.0, "ai": 0.5},
+  "items": [
+    {"id": "course-1", "features": {"chess": 1.0}},
+    {"id": "course-2", "features": {"music": 1.0}}
+  ],
+  "limit": 10
+}
+```
 
----
+The API returns deterministic scores using the declared `cosine-similarity-v1` algorithm.
 
-# Python Recommendation Engine
+## Run locally
 
-![GitHub stars](https://img.shields.io/github/stars/skylerblue333/Python-Recommendation-Engine?style=flat-square)
-![GitHub license](https://img.shields.io/github/license/skylerblue333/Python-Recommendation-Engine?style=flat-square)
+```bash
+python -m pip install -r requirements.txt
+uvicorn main:app --host 127.0.0.1 --port 8000
+```
 
-## 🌟 Overview
-**Python-Recommendation-Engine** is a professional-grade project within the **SkyCoin4444** ecosystem. It focuses on delivering high-value solutions in the domain of **Python**.
+## Container
 
-## 🚀 Key Features
-- **Scalable Architecture**: Designed for enterprise-level growth and performance.
-- **Modern Standards**: Implements best practices for clean code and maintainability.
-- **Robust Integration**: Built to work seamlessly within modern cloud-native environments.
+```bash
+docker build -t sky-recommend .
+docker run --rm -p 8000:8000 sky-recommend
+```
 
-## 🛠️ Technology Stack
-- **Primary Domain**: Python
-- **Ecosystem**: SkyCoin4444 Digital Platform
+The image runs as a non-root application user.
 
-## 📂 Structure
-The project is organized into a modular structure to ensure clarity and ease of development.
+## Verification
 
-## 👨‍💻 Author
-**Skyler Blue Spillers**
-*Professional Chess Player & Software Engineer*
+```bash
+python -m compileall -q main.py tests
+ruff check main.py tests
+pytest -q
+pip-audit -r requirements.txt
+docker build -t sky-recommend:ci .
+test "$(docker run --rm --entrypoint id sky-recommend:ci -u)" != "0"
+```
 
----
-*Powered by SkyCoin4444*
+## SKYCOIN4444 integration
+
+Keep this service independently deployable. SKYCOIN4444 modules such as feeds, marketplace, SkySchool, or content discovery can call `/v1/recommend` through an authenticated internal adapter. The caller should own identity, authorization, feature construction, privacy/consent, rate limiting, and persistence; this repository owns deterministic ranking only.
+
+## Limits
+
+This is not a trained ML model, collaborative-filtering platform, vector database, personalization warehouse, fairness system, or production recommendation stack. It stores no user profiles and makes no claim of recommendation quality beyond the declared deterministic algorithm.
+
+See [`SECURITY.md`](SECURITY.md) for security boundaries.
