@@ -1,1 +1,3 @@
-print('Starting Python-Recommendation-Engine service...')\n
+from src.main import app
+
+__all__ = ["app"]
